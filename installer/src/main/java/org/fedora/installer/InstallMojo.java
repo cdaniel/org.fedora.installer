@@ -18,6 +18,8 @@ package org.fedora.installer;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +44,7 @@ import org.eclipse.tycho.ArtifactKey;
 import org.eclipse.tycho.artifacts.TargetPlatform;
 import org.eclipse.tycho.core.ee.shared.ExecutionEnvironmentConfigurationStub;
 import org.eclipse.tycho.core.osgitools.DefaultArtifactKey;
+import org.eclipse.tycho.core.resolver.shared.MavenRepositoryLocation;
 import org.eclipse.tycho.launching.LaunchConfiguration;
 import org.eclipse.tycho.osgi.adapters.MavenLoggerAdapter;
 import org.eclipse.tycho.p2.resolver.facade.P2ResolutionResult;
@@ -51,9 +54,10 @@ import org.eclipse.tycho.p2.resolver.facade.P2ResolverFactory;
 import org.eclipse.tycho.p2.target.facade.TargetPlatformBuilder;
 
 /**
- * Goal which touches a timestamp file.
+ * Goal that makes p2 repo runnable.
  *
  * @goal install
+ * @requiresProject false
  * 
  */
 public class InstallMojo
@@ -115,10 +119,30 @@ public class InstallMojo
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
+    	getParametersFromCommandLine();
     	EquinoxInstallation p2DirectorInstallation = constructP2DirectorApp();
     	runEclipse(p2DirectorInstallation);
     }
     
+	private void getParametersFromCommandLine() {
+		if(sourceRepo == null){
+			String cliSourceRepo = System.getProperty("sourceRepo");
+			logger.debug("Source repo set to" + cliSourceRepo);
+			sourceRepo = new File(cliSourceRepo);
+		}
+		if(targetLocation == null){
+			String cliTargetLocation = System.getProperty("targetLocation");
+			logger.debug("Source repo set to" + cliTargetLocation);
+			targetLocation = new File(cliTargetLocation);
+		}
+		if(sourceRepo == null){
+			throw new IllegalArgumentException("sourceRepo not set");
+		}
+		if(targetLocation == null){
+			throw new IllegalArgumentException("targetLocation not set");
+		}
+	}
+
 	private EquinoxInstallation constructP2DirectorApp() {
 		P2ResolverFactory resolverFactory = equinox
 				.getService(P2ResolverFactory.class);
@@ -126,19 +150,20 @@ public class InstallMojo
 				.createTargetPlatformBuilder(new ExecutionEnvironmentConfigurationStub(
 						executionEnvironment));
 
-		// we want to resolve from remote repos only
+		
 		tpBuilder.setIncludeLocalMavenRepo(true);
+		String uri = "file:" + System.getProperty("user.dir") + "/.m2/p2/repo";
+		try {
+			tpBuilder.addP2Repository(new MavenRepositoryLocation(uri, new URI(uri)));
+		} catch (URISyntaxException e) {
+			logger.warn("Unable to resolve repository URI : " + uri, e);
+		}
 
 		TargetPlatform targetPlatform = tpBuilder.buildTargetPlatform();
 		P2Resolver resolver = resolverFactory
 				.createResolver(new MavenLoggerAdapter(logger, false));
 
-		Dependency p2DirectorDependency = newBundleDependency("org.eclipse.equinox.p2.repository.tools");
-		resolver.addDependency(p2DirectorDependency.getType(),
-				p2DirectorDependency.getArtifactId(),
-				p2DirectorDependency.getVersion());
-
-		for (Dependency dependency : getDefaultDependencies()) {
+		for (Dependency dependency : getDependencies()) {
 			resolver.addDependency(dependency.getType(),
 					dependency.getArtifactId(), dependency.getVersion());
 		}
@@ -164,11 +189,16 @@ public class InstallMojo
         return dependency;
     }
 
-    private List<Dependency> getDefaultDependencies() {
+    private List<Dependency> getDependencies() {
         ArrayList<Dependency> result = new ArrayList<Dependency>();
         result.add(newBundleDependency("org.eclipse.osgi"));
         result.add(newBundleDependency(EquinoxInstallationDescription.EQUINOX_LAUNCHER));
         result.add(newBundleDependency("org.eclipse.core.runtime"));
+        result.add(newBundleDependency("org.eclipse.equinox.p2.repository.tools"));
+        result.add(newBundleDependency("org.eclipse.equinox.ds"));
+        result.add(newBundleDependency("org.eclipse.equinox.p2.touchpoint.eclipse"));
+        result.add(newBundleDependency("org.eclipse.equinox.p2.touchpoint.natives"));
+        result.add(newBundleDependency("org.eclipse.equinox.p2.transport.ecf"));
         return result;
     }
 
@@ -203,9 +233,9 @@ public class InstallMojo
         cli.setWorkingDirectory(project.getBasedir());
 
         addProgramArgs(true, cli, "-install", runtime.getLocation().getAbsolutePath(), "-configuration", new File(work,
-                "configuration").getAbsolutePath());
+                "configuration").getAbsolutePath(), "-data", new File(work,"data").getAbsolutePath());
 
-        String appArgLine = "-application org.eclipse.equinox.p2.repository.repo2runnable -source " + sourceRepo + "-target " + targetLocation;
+        String appArgLine = "-application org.eclipse.equinox.p2.repository.repo2runnable -source " + sourceRepo + " -destination " + targetLocation;
         		
         addProgramArgs(false, cli, appArgLine);
 
