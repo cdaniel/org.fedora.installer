@@ -122,6 +122,10 @@ public class InstallMojo
     	getParametersFromCommandLine();
     	EquinoxInstallation p2DirectorInstallation = constructP2DirectorApp();
     	runEclipse(p2DirectorInstallation);
+    	File contentJar = new File(targetLocation, "content.jar");
+    	contentJar.delete();
+    	File artifactsJar = new File(targetLocation, "artifacts.jar");
+    	artifactsJar.delete();
     }
     
 	private void getParametersFromCommandLine() {
