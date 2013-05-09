@@ -1,12 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.fedora</groupId>
+	<groupId>org.fedoraproject</groupId>
 	<artifactId>feclipse-maven-plugin</artifactId>
 	<packaging>maven-plugin</packaging>
-	<version>0.0.1</version>
-	<name>installer Maven Mojo</name>
-	<url>http://maven.apache.org</url>
+	<version>0.0.2</version>
+	<name>Eclipse P2 Installer</name>
+	<url>https://git.fedorahosted.org/cgit/feclipse-maven-plugin.git/</url>
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.maven</groupId>

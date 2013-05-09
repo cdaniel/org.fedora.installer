@@ -1,4 +1,4 @@
-package org.fedora.installer;
+package org.fedoraproject.installer;
 
 /*
  * Copyright 2001-2005 The Apache Software Foundation.
@@ -226,7 +226,7 @@ public class InstallMojo
         String executable = null;
         Toolchain tc = getToolchain();
         if (tc != null) {
-            getLog().info("Toolchain in org.fedora.installer: " + tc);
+            getLog().info("Toolchain in org.fedoraproject.installer: " + tc);
             executable = tc.findTool("java");
         }
         cli.setJvmExecutable(executable);
